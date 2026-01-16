@@ -48,8 +48,8 @@ export const ChatProvider = ({ children }) => {
                 // Replace only the matching pending message
                     if (messageData.tempId) {
                         return prev.map(msg =>
-                            msg.tempId === messageData.tempId
-                            ? data.newMessage
+                            msg._id === messageData.tempId
+                            ? {...data.newMessage}
                             : msg
                         );
                     }
@@ -66,22 +66,22 @@ export const ChatProvider = ({ children }) => {
             // Rollback pending message on failure
             if (messageData.tempId) {
                 setMessages(prev =>
-                    prev.filter(msg => msg.tempId !== messageData.tempId)
+                    prev.filter(msg => msg._id !== messageData.tempId)
                 );
             }
         }
     };
 
     // funtion to subscribe to message for selected user
-    const subscribeToMessage = async () => {
-        if(!socket || !axios) return;
+    const subscribeToMessage = () => {
+        if (!socket) return;
 
-        socket.on("newMessage" ,(newMessage)=>{
-            if(selectedUser && newMessage.senderId === selectedUser._id){
+        const handler = (newMessage) => {
+            if (selectedUser && newMessage.senderId === selectedUser._id) {
                 newMessage.seen = true;
+
                 setMessages(prev => {
-                    // prevent duplicate
-                    if (prev.some(m => m._id === newMessage._id)) {
+                    if (prev.some(msg => msg._id === newMessage._id)) {
                         return prev;
                     }
                     return [...prev, newMessage];
@@ -89,21 +89,23 @@ export const ChatProvider = ({ children }) => {
 
                 axios.put(`/api/messages/mark/${newMessage._id}`);
             } else {
-                setUnseenMessages((prevUnseenMessages)=>({
-                    ...prevUnseenMessages ,[newMessage.senderId] :
-                    prevUnseenMessages[newMessage.senderId] ? prevUnseenMessages[newMessage.senderId] + 1 : 1
-                }))
+                setUnseenMessages(prev => ({
+                    ...prev,
+                    [newMessage.senderId]: (prev[newMessage.senderId] || 0) + 1
+                }));
             }
-        })
-    } 
-    // function to unsubscribe from messages
-    const unsubscribeFromMessages = async ()=>{
-        if(socket) socket.off("newMessage");
-    }
+        };
 
+        socket.on("newMessage", handler);
+
+        return () => {
+            socket.off("newMessage", handler);
+        };
+    };
+ 
     useEffect(()=>{
-        subscribeToMessage();
-        return ()=>unsubscribeFromMessages();
+        const cleanup = subscribeToMessage();
+        return cleanup;
     } ,[socket ,selectedUser])
 
     const value={

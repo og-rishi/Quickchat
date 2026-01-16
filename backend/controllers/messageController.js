@@ -99,7 +99,7 @@ export const sendMessage = async (req ,res)=>{
             io.to(receiverSocketId).emit("newMessage" ,newMessage)
         }
 
-        res.json({success : true ,newMessage});
+        res.json({success : true ,newMessage ,tempId: req.body.tempId || null});
     } catch (error) {
         console.log(error.message);
         res.json({success : false ,message : error.message})
