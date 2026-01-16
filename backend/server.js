@@ -13,7 +13,7 @@ const server = http.createServer(app);
 
 // create socket.io server
 export const io = new Server(server ,{
-    cors : {origin : "*"}
+    cors : {origin : process.env.CLIENT_URL}
 })
 // Store Online users
 export const userSocketMap = {}; //{userId : socketId}
@@ -36,7 +36,7 @@ io.on("connection" ,(socket)=>{
 })
 
 // Middleware
-app.use(cors({ origin: "*", credentials: true }));
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(express.json({limit: '10mb'}));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
