@@ -87,7 +87,10 @@ export const ChatProvider = ({ children }) => {
                     return [...prev, newMessage];
                 });
 
-                axios.put(`/api/messages/mark/${newMessage._id}`);
+                if (axios.defaults.headers.common["token"]) {
+                    axios.put(`/api/messages/mark/${newMessage._id}`);
+                }
+
             } else {
                 setUnseenMessages(prev => ({
                     ...prev,
